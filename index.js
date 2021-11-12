@@ -13,79 +13,97 @@ const { folder } = program.opts();
 console.log("Name folder");
 console.log(folder);
 
-const deletefolderFunction = (nameFolder) => {
-  nameFolder.map((file) => {
-    console.log("imprimo file!");
-    console.log(file);
-    fs.stat(path.resolve(file), (statsError, info) => {
+const deletefolderFunction = async (routeFolder, nameFolder) => {
+  console.log(nameFolder);
+  await nameFolder.forEach((file) => {
+    console.log("imprimo ruta!");
+    console.log(path.resolve(`${routeFolder}`, `${file}`));
+    fs.stat(path.resolve(`${routeFolder}`, `${file}`), (statsError, info) => {
       console.log("imprimo info!");
       console.log(info);
       console.log("imprimo error!");
       console.log(statsError);
-      if (info.isFile()) {
-        fs.unlink(path.resolve(file), (error) => {
+      if (!info.isDirectory()) {
+        fs.unlink(path.resolve(`${routeFolder}`, `${file}`), (error) => {
           if (error) {
+            console.log("File Error!!");
+            console.log(file);
+            console.log("Path File Error!!");
+            console.log(path.resolve(`${routeFolder}`, `${file}`));
             console.log(error);
           } else {
-            fs.readdir(path.resolve(file), async (error, folder) => {
-              if (error) {
-                console.log(error);
-                return;
-              } else {
-                console.log(folder);
-                deletefolderFunction(folder);
-              }
-            });
-          }
-        });
-      } else {
-        fs.rmdir(path.resolve(file), (error) => {
-          if (error) {
-            console.log(error);
-          } else {
+            console.log(`Delete file`);
             console.log(`Delete ${file}`);
           }
         });
+      } else {
+        fs.readdir(
+          path.resolve(`${routeFolder}`, `${file}`),
+          async (error, folder) => {
+            if (error) {
+              console.log(error);
+              return;
+            } else {
+              console.log(folder);
+              await deletefolderFunction(
+                path.resolve(`${routeFolder}`, `${file}`),
+                folder
+              );
+            }
+          }
+        );
       }
-      console.log(`Delete ${file}`);
-      fs.rmdirSync(file);
+    });
+    fs.rmdir(path.resolve(`${routeFolder}`, `${file}`), (error) => {
+      if (error) {
+        console.log("Final File Error!!");
+        console.log(file);
+        console.log("Final Path File Error!!");
+        console.log(path.resolve(`${routeFolder}`, `${file}`));
+        console.log(error);
+      } else {
+        console.log(`Delete Folder`);
+        console.log(`Delete ${file}`);
+      }
     });
   });
 };
 
-const folderToDelete = (deletefolder) => {
-  fs.readdir(path.resolve(deletefolder), async (error, folder) => {
-    if (error) {
-      console.log(error);
-      return;
-    } else {
-      console.log(folder);
+const folderToDelete = async (deletefolder) => {
+  console.log(path.resolve(deletefolder));
 
-      const answers = await inquirer.prompt({
-        name: "borrar",
-        type: "list",
-        message: "¿Seguro que quiere borrar?",
-        choices: [
-          {
-            name: "Si",
-            value: true,
-          },
-          {
-            name: "No",
-            value: false,
-          },
-        ],
-        default: false,
-      });
-
-      if (answers) {
-        deletefolderFunction(folder);
-      } else {
-        console.log("Adios!");
-        return;
-      }
-    }
+  const answers = await inquirer.prompt({
+    name: "borrar",
+    type: "list",
+    message: "¿Seguro que quiere borrar?",
+    choices: [
+      {
+        name: "Si",
+        value: true,
+      },
+      {
+        name: "No",
+        value: false,
+      },
+    ],
+    default: false,
   });
+
+  if (answers) {
+    const route = path.resolve(deletefolder);
+    fs.readdir(path.resolve(deletefolder), (error, folder) => {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Tamaño del folder ->");
+        console.log(folder.length);
+        deletefolderFunction(route, folder);
+      }
+    });
+  } else {
+    console.log("Adios!");
+    return;
+  }
 };
 
 folderToDelete(folder);
