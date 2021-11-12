@@ -13,6 +13,46 @@ const { folder } = program.opts();
 console.log("Name folder");
 console.log(folder);
 
+const deletefolderFunction = (nameFolder) => {
+  nameFolder.map((file) => {
+    console.log("imprimo file!");
+    console.log(file);
+    fs.stat(path.resolve(file), (statsError, info) => {
+      console.log("imprimo info!");
+      console.log(info);
+      console.log("imprimo error!");
+      console.log(statsError);
+      if (info.isFile()) {
+        fs.unlink(path.resolve(file), (error) => {
+          if (error) {
+            console.log(error);
+          } else {
+            fs.readdir(path.resolve(file), async (error, folder) => {
+              if (error) {
+                console.log(error);
+                return;
+              } else {
+                console.log(folder);
+                deletefolderFunction(folder);
+              }
+            });
+          }
+        });
+      } else {
+        fs.rmdir(path.resolve(file), (error) => {
+          if (error) {
+            console.log(error);
+          } else {
+            console.log(`Delete ${file}`);
+          }
+        });
+      }
+      console.log(`Delete ${file}`);
+      fs.rmdirSync(file);
+    });
+  });
+};
+
 const folderToDelete = (deletefolder) => {
   fs.readdir(path.resolve(deletefolder), async (error, folder) => {
     if (error) {
@@ -38,7 +78,12 @@ const folderToDelete = (deletefolder) => {
         default: false,
       });
 
-      /*  folder.map(()=>) */
+      if (answers) {
+        deletefolderFunction(folder);
+      } else {
+        console.log("Adios!");
+        return;
+      }
     }
   });
 };
